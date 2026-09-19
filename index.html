@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sipariş Girme Uygulaması</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header id="app-header" class="hidden">
+  <h1>Sipariş Girme Uygulaması</h1>
+  <nav>
+    <button data-view="new-order">Yeni Sipariş</button>
+    <button data-view="my-orders">Siparişlerim</button>
+    <button data-view="my-customers">Müşterilerim</button>
+    <button data-view="admin" id="nav-admin" class="hidden">Admin Onayları</button>
+  </nav>
+  <div>
+    <span id="current-user" style="margin-right:12px;font-size:13px;color:#5f6368;"></span>
+    <button class="link" id="logout-btn">Çıkış</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <div id="view-login" class="login-wrap">
+    <div class="card login-card">
+      <h2>Giriş Yap</h2>
+      <form id="login-form">
+        <label for="login-username">Kullanıcı Adı</label>
+        <input id="login-username" required autocomplete="username" />
+        <label for="login-password">Şifre</label>
+        <input id="login-password" type="password" required autocomplete="current-password" />
+        <button class="primary" type="submit">Giriş Yap</button>
+        <div class="error" id="login-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- YENİ SİPARİŞ -->
+  <div id="view-new-order" class="hidden">
+    <div class="card">
+      <h2>Yeni Sipariş</h2>
+      <form id="order-form">
+        <label for="order-customer">Müşteri</label>
+        <select id="order-customer" required></select>
+
+        <div id="new-customer-box" class="hidden card" style="margin-top:12px;">
+          <strong>Yeni Müşteri</strong>
+          <label>Müşteri Adı</label><input id="nc-customerName" />
+          <label>Vergi Levhasındaki Ad</label><input id="nc-taxPlateName" />
+          <label>Vergi Kimlik No</label><input id="nc-taxId" />
+          <label>Teslimat Adresi</label><textarea id="nc-deliveryAddress"></textarea>
+          <label>Ödeme Sorumlusu</label><input id="nc-paymentResponsible" />
+          <label>Depo Sorumlusu</label><input id="nc-warehouseResponsible" />
+          <label>Siparişi Onaylayan İsim(ler)</label><input id="nc-approverNames" />
+          <label>Telefon Numaraları</label><input id="nc-phones" />
+          <label>E-posta Adresleri</label><input id="nc-emails" />
+          <button type="button" class="primary" id="save-new-customer-btn">Müşteriyi Kaydet</button>
+        </div>
+
+        <label for="order-model">Model</label>
+        <select id="order-model" required></select>
+
+        <label for="order-quantity">Adet</label>
+        <input id="order-quantity" type="number" min="1" required />
+
+        <label for="order-deliveryDate">Teslimat Tarihi</label>
+        <input id="order-deliveryDate" type="date" required />
+
+        <label for="order-paymentMethod">Ödeme Şekli</label>
+        <select id="order-paymentMethod" required>
+          <option value="Havale/EFT">Havale/EFT</option>
+          <option value="Kredi Kartı">Kredi Kartı</option>
+          <option value="Çek">Çek</option>
+          <option value="Nakit">Nakit</option>
+        </select>
+
+        <label for="order-paymentTiming">Ödeme Zamanı</label>
+        <select id="order-paymentTiming" required>
+          <option value="Peşin">Peşin</option>
+          <option value="7 Gün Vade">7 Gün Vade</option>
+          <option value="15 Gün Vade">15 Gün Vade</option>
+          <option value="30 Gün Vade">30 Gün Vade</option>
+          <option value="60 Gün Vade">60 Gün Vade</option>
+        </select>
+
+        <button class="primary" type="submit">Siparişi Gönder</button>
+        <div class="error" id="order-error"></div>
+        <div class="hint" id="order-success" style="color:#1e8e3e;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SİPARİŞLERİM -->
+  <div id="view-my-orders" class="hidden">
+    <div class="card">
+      <h2>Siparişlerim</h2>
+      <table id="my-orders-table">
+        <thead><tr><th>Müşteri</th><th>Model</th><th>Adet</th><th>Teslimat</th><th>Durum</th><th>Tarih</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MÜŞTERİLERİM -->
+  <div id="view-my-customers" class="hidden">
+    <div class="card">
+      <h2>Müşterilerim</h2>
+      <table id="my-customers-table">
+        <thead><tr><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="view-admin" class="hidden">
+    <div class="card">
+      <h2>Sipariş Onayları</h2>
+      <p id="admin-pending-count" class="hint"></p>
+      <table id="admin-orders-table">
+        <thead><tr><th>Kullanıcı</th><th>Müşteri</th><th>Model</th><th>Adet</th><th>Teslimat</th><th>İşlem</th><th>Tarih</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
