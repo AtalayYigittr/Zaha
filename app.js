@@ -125,7 +125,8 @@ async function loadNewOrderView() {
 function fillModelSelect() {
   const sel = document.getElementById('order-model');
   sel.innerHTML = '<option value="">Model seçin...</option>' +
-    state.models.map(m => `<option value="${m.id}" data-name="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
+    state.models.map(m => `<option value="${m.id}" data-name="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('') +
+    '<option value="__new__">+ Yeni ürün ekle</option>';
 }
 
 function fillCustomerSelect() {
@@ -168,6 +169,27 @@ document.getElementById('order-customer').addEventListener('change', (e) => {
   document.getElementById('new-customer-box').classList.toggle('hidden', e.target.value !== '__new__');
 });
 
+document.getElementById('order-model').addEventListener('change', (e) => {
+  document.getElementById('new-product-box').classList.toggle('hidden', e.target.value !== '__new__');
+});
+
+document.getElementById('save-new-product-btn').addEventListener('click', async () => {
+  const errorEl = document.getElementById('order-error');
+  errorEl.textContent = '';
+  const name = val('np-name');
+  if (!name) { errorEl.textContent = 'Ürün adı boş olamaz.'; return; }
+  try {
+    const saved = await apiCall('createProduct', { name });
+    state.models.push(saved);
+    fillModelSelect();
+    const sel = document.getElementById('order-model');
+    sel.value = saved.id;
+    document.getElementById('new-product-box').classList.add('hidden');
+  } catch (err) {
+    errorEl.textContent = err.message;
+  }
+});
+
 document.getElementById('save-new-customer-btn').addEventListener('click', async () => {
   const errorEl = document.getElementById('order-error');
   errorEl.textContent = '';
@@ -207,6 +229,10 @@ document.getElementById('order-form').addEventListener('submit', async (e) => {
   const selectedCustomer = resolveSelectedCustomer(customerValue);
   if (!selectedCustomer) {
     errorEl.textContent = 'Lütfen bir müşteri seçin (veya önce yeni müşteri kaydedin).';
+    return;
+  }
+  if (!modelId || modelId === '__new__') {
+    errorEl.textContent = 'Lütfen bir model seçin (veya önce yeni ürün kaydedin).';
     return;
   }
 

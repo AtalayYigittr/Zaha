@@ -65,6 +65,13 @@
         <label for="order-model">Model</label>
         <select id="order-model" required></select>
 
+        <div id="new-product-box" class="hidden card" style="margin-top:12px;">
+          <strong>Yeni Ürün / Model</strong>
+          <label>Ürün Adı</label><input id="np-name" />
+          <p class="hint">Bu ürün doğrudan Paraşüt'te oluşturulur; fiyat, stok ve diğer detayları daha sonra Paraşüt üzerinden düzenleyebilirsiniz.</p>
+          <button type="button" class="primary" id="save-new-product-btn">Ürünü Kaydet</button>
+        </div>
+
         <label for="order-quantity">Adet</label>
         <input id="order-quantity" type="number" min="1" required />
 
