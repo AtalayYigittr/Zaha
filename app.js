@@ -3,7 +3,7 @@
 // Dağıtımdan sonra "https://script.google.com/macros/s/AKfycb.../exec" gibi
 // bir adres alırsınız.
 // ============================================================
-const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxP2mmZEtCphL3ZScdfSvF6Z_seX57URoX-lgrkf1h5Z1IN7VmU0LaDZPu6JTl28n1x/exec';
 
 const state = {
   token: localStorage.getItem('token') || '',
