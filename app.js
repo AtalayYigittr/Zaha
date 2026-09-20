@@ -3,14 +3,15 @@
 // Dağıtımdan sonra "https://script.google.com/macros/s/AKfycb.../exec" gibi
 // bir adres alırsınız.
 // ============================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbxP2mmZEtCphL3ZScdfSvF6Z_seX57URoX-lgrkf1h5Z1IN7VmU0LaDZPu6JTl28n1x/exec';
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 
 const state = {
   token: localStorage.getItem('token') || '',
   username: localStorage.getItem('username') || '',
   role: localStorage.getItem('role') || '',
   models: [],
-  customers: []
+  myCustomers: [],       // uygulama içinde kendi eklediğiniz müşteriler
+  parasutCustomers: []   // Paraşüt'teki mevcut müşteri kontakları (herkese görünür)
 };
 
 async function apiCall(action, payload) {
@@ -41,7 +42,7 @@ function clearSession() {
 }
 
 // ---------- Görünüm yönetimi ----------
-const views = ['login', 'new-order', 'my-orders', 'my-customers', 'admin'];
+const views = ['login', 'new-order', 'my-orders', 'my-customers', 'admin', 'admin-customers'];
 
 function showView(name) {
   views.forEach(v => {
@@ -55,12 +56,14 @@ function showView(name) {
   if (name === 'my-orders') loadMyOrders();
   if (name === 'my-customers') loadMyCustomers();
   if (name === 'admin') loadAdminOrders();
+  if (name === 'admin-customers') loadAdminCustomers();
 }
 
 function renderHeader() {
   const isLoggedIn = !!state.token;
   document.getElementById('app-header').classList.toggle('hidden', !isLoggedIn);
   document.getElementById('nav-admin').classList.toggle('hidden', state.role !== 'admin');
+  document.getElementById('nav-admin-customers').classList.toggle('hidden', state.role !== 'admin');
   document.getElementById('current-user').textContent = state.username
     ? `${state.username} (${state.role === 'admin' ? 'admin' : 'kullanıcı'})`
     : '';
@@ -95,21 +98,28 @@ document.querySelectorAll('nav button[data-view]').forEach(btn => {
 });
 
 // ---------- Yeni Sipariş ----------
+// Model, kendi müşterilerim ve Paraşüt müşterileri birbirinden BAĞIMSIZ
+// çekilir: biri hata verse bile diğerleri (ve "+ Yeni müşteri ekle"
+// seçeneği) ekranda görünmeye devam eder.
 async function loadNewOrderView() {
   const errorEl = document.getElementById('order-error');
   errorEl.textContent = '';
-  try {
-    if (state.models.length === 0) {
-      state.models = await apiCall('getModels', {});
-    }
-    if (state.customers.length === 0) {
-      state.customers = await apiCall('listMyCustomers', {});
-    }
-    fillModelSelect();
-    fillCustomerSelect();
-  } catch (err) {
-    errorEl.textContent = err.message;
+  const errors = [];
+
+  if (state.models.length === 0) {
+    try { state.models = await apiCall('getModels', {}); }
+    catch (err) { errors.push('Modeller: ' + err.message); }
   }
+  try {
+    state.myCustomers = await apiCall('listMyCustomers', {});
+  } catch (err) { errors.push('Kendi müşterileriniz: ' + err.message); }
+  try {
+    state.parasutCustomers = await apiCall('listParasutCustomers', {});
+  } catch (err) { errors.push('Paraşüt müşterileri: ' + err.message); }
+
+  fillModelSelect();
+  fillCustomerSelect();
+  if (errors.length) errorEl.textContent = errors.join(' | ');
 }
 
 function fillModelSelect() {
@@ -120,9 +130,38 @@ function fillModelSelect() {
 
 function fillCustomerSelect() {
   const sel = document.getElementById('order-customer');
-  sel.innerHTML = '<option value="">Müşteri seçin...</option>' +
-    state.customers.map(c => `<option value="${c.id}">${escapeHtml(c.customerName)}</option>`).join('') +
-    '<option value="__new__">+ Yeni müşteri ekle</option>';
+  const myGroup = state.myCustomers.map(c =>
+    `<option value="local:${c.id}">${escapeHtml(c.customerName)}</option>`).join('');
+  const parasutGroup = state.parasutCustomers.map(c =>
+    `<option value="parasut:${c.parasutContactId}">${escapeHtml(c.customerName)}</option>`).join('');
+
+  sel.innerHTML = '<option value="">Müşteri seçin...</option>'
+    + (myGroup ? `<optgroup label="Kendi Müşterilerim">${myGroup}</optgroup>` : '')
+    + (parasutGroup ? `<optgroup label="Paraşüt Müşterileri">${parasutGroup}</optgroup>` : '')
+    + '<option value="__new__">+ Yeni müşteri ekle</option>';
+}
+
+/** Seçilen <option value="local:id"|"parasut:id"> ifadesinden ilgili müşteri objesini bulur. */
+function resolveSelectedCustomer(value) {
+  if (!value || value === '__new__') return null;
+  const [source, id] = value.split(':');
+  if (source === 'local') {
+    const c = state.myCustomers.find(x => x.id === id);
+    return c ? { source: 'local', customerId: c.id, customerName: c.customerName } : null;
+  }
+  if (source === 'parasut') {
+    const c = state.parasutCustomers.find(x => String(x.parasutContactId) === id);
+    return c ? {
+      source: 'parasut',
+      parasutContactId: c.parasutContactId,
+      customerName: c.customerName,
+      taxId: c.taxId,
+      deliveryAddress: c.deliveryAddress,
+      phones: c.phones,
+      emails: c.emails
+    } : null;
+  }
+  return null;
 }
 
 document.getElementById('order-customer').addEventListener('change', (e) => {
@@ -145,9 +184,9 @@ document.getElementById('save-new-customer-btn').addEventListener('click', async
   };
   try {
     const saved = await apiCall('saveCustomer', customer);
-    state.customers.push(saved);
+    state.myCustomers.push(saved);
     fillCustomerSelect();
-    document.getElementById('order-customer').value = saved.id;
+    document.getElementById('order-customer').value = 'local:' + saved.id;
     document.getElementById('new-customer-box').classList.add('hidden');
   } catch (err) {
     errorEl.textContent = err.message;
@@ -160,19 +199,28 @@ document.getElementById('order-form').addEventListener('submit', async (e) => {
   const okEl = document.getElementById('order-success');
   errorEl.textContent = ''; okEl.textContent = '';
 
-  const customerId = document.getElementById('order-customer').value;
+  const customerValue = document.getElementById('order-customer').value;
   const modelSel = document.getElementById('order-model');
   const modelId = modelSel.value;
   const modelName = modelSel.selectedOptions[0] ? modelSel.selectedOptions[0].dataset.name : '';
 
-  if (!customerId || customerId === '__new__') {
+  const selectedCustomer = resolveSelectedCustomer(customerValue);
+  if (!selectedCustomer) {
     errorEl.textContent = 'Lütfen bir müşteri seçin (veya önce yeni müşteri kaydedin).';
     return;
   }
 
   try {
     await apiCall('createOrder', {
-      customerId, modelId, modelName,
+      customerSource: selectedCustomer.source,
+      customerId: selectedCustomer.customerId,           // source: local ise
+      parasutContactId: selectedCustomer.parasutContactId, // source: parasut ise
+      customerName: selectedCustomer.customerName,
+      taxId: selectedCustomer.taxId,
+      deliveryAddress: selectedCustomer.deliveryAddress,
+      phones: selectedCustomer.phones,
+      emails: selectedCustomer.emails,
+      modelId, modelName,
       quantity: val('order-quantity'),
       deliveryDate: val('order-deliveryDate'),
       paymentMethod: val('order-paymentMethod'),
@@ -230,7 +278,7 @@ async function loadMyCustomers() {
   tbody.innerHTML = '<tr><td colspan="4">Yükleniyor...</td></tr>';
   try {
     const customers = await apiCall('listMyCustomers', {});
-    state.customers = customers;
+    state.myCustomers = customers;
     tbody.innerHTML = customers.map(c => `<tr>
         <td>${escapeHtml(c.customerName)}</td>
         <td>${escapeHtml(c.taxId)}</td>
@@ -278,6 +326,23 @@ async function loadAdminOrders() {
     });
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="7" class="error">${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+async function loadAdminCustomers() {
+  const tbody = document.querySelector('#admin-customers-table tbody');
+  tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
+  try {
+    const customers = await apiCall('adminListCustomers', {});
+    tbody.innerHTML = customers.map(c => `<tr>
+        <td>${escapeHtml(c.ownerUsername)}</td>
+        <td>${escapeHtml(c.customerName)}</td>
+        <td>${escapeHtml(c.taxId)}</td>
+        <td>${escapeHtml(c.deliveryAddress || '')}</td>
+        <td>${escapeHtml(c.phones || '')}</td>
+      </tr>`).join('') || '<tr><td colspan="5">Henüz müşteri yok.</td></tr>';
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" class="error">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 

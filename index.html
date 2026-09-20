@@ -15,6 +15,7 @@
     <button data-view="my-orders">Siparişlerim</button>
     <button data-view="my-customers">Müşterilerim</button>
     <button data-view="admin" id="nav-admin" class="hidden">Admin Onayları</button>
+    <button data-view="admin-customers" id="nav-admin-customers" class="hidden">Tüm Müşteriler</button>
   </nav>
   <div>
     <span id="current-user" style="margin-right:12px;font-size:13px;color:#5f6368;"></span>
@@ -123,6 +124,18 @@
       <p id="admin-pending-count" class="hint"></p>
       <table id="admin-orders-table">
         <thead><tr><th>Kullanıcı</th><th>Müşteri</th><th>Model</th><th>Adet</th><th>Teslimat</th><th>İşlem</th><th>Tarih</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADMIN: TÜM MÜŞTERİLER -->
+  <div id="view-admin-customers" class="hidden">
+    <div class="card">
+      <h2>Tüm Müşteriler</h2>
+      <p class="hint">Tüm kullanıcıların uygulama içinde ekledigi müşteriler (Paraşüt'teki mevcut müşteriler dahil değildir, onlar zaten Paraşüt'te görüntülenebilir).</p>
+      <table id="admin-customers-table">
+        <thead><tr><th>Ekleyen Kullanıcı</th><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
