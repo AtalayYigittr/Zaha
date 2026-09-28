@@ -3,19 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sipariş Girme Uygulaması</title>
+<title>Sipariş Paneli</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <header id="app-header" class="hidden">
-  <h1>Sipariş Girme Uygulaması</h1>
+  <h1>Sipariş Paneli</h1>
   <nav>
     <button data-view="new-order">Yeni Sipariş</button>
     <button data-view="my-orders">Siparişlerim</button>
     <button data-view="my-customers">Müşterilerim</button>
-    <button data-view="admin" id="nav-admin" class="hidden">Admin Onayları</button>
-    <button data-view="admin-customers" id="nav-admin-customers" class="hidden">Tüm Müşteriler</button>
+    <button data-view="admin" class="admin-only hidden">Sipariş Onayları</button>
+    <button data-view="admin-customers" class="admin-only hidden">Tüm Müşteriler</button>
+    <button data-view="admin-products" class="admin-only hidden">Ürünler</button>
+    <button data-view="admin-plans" class="admin-only hidden">Ödeme Planları</button>
   </nav>
   <div>
     <span id="current-user" style="margin-right:12px;font-size:13px;color:#5f6368;"></span>
@@ -25,7 +27,6 @@
 
 <main>
 
-  <!-- LOGIN -->
   <div id="view-login" class="login-wrap">
     <div class="card login-card">
       <h2>Giriş Yap</h2>
@@ -47,53 +48,30 @@
       <form id="order-form">
         <label for="order-customer">Müşteri</label>
         <select id="order-customer" required></select>
-
         <div id="new-customer-box" class="hidden card" style="margin-top:12px;">
           <strong>Yeni Müşteri</strong>
-          <label>Müşteri Adı</label><input id="nc-customerName" />
-          <label>Vergi Levhasındaki Ad</label><input id="nc-taxPlateName" />
-          <label>Vergi Kimlik No</label><input id="nc-taxId" />
-          <label>Teslimat Adresi</label><textarea id="nc-deliveryAddress"></textarea>
-          <label>Ödeme Sorumlusu</label><input id="nc-paymentResponsible" />
-          <label>Depo Sorumlusu</label><input id="nc-warehouseResponsible" />
-          <label>Siparişi Onaylayan İsim(ler)</label><input id="nc-approverNames" />
-          <label>Telefon Numaraları</label><input id="nc-phones" />
-          <label>E-posta Adresleri</label><input id="nc-emails" />
+          <div id="nc-fields"></div>
           <button type="button" class="primary" id="save-new-customer-btn">Müşteriyi Kaydet</button>
         </div>
 
-        <label for="order-model">Model</label>
-        <select id="order-model" required></select>
-
-        <div id="new-product-box" class="hidden card" style="margin-top:12px;">
-          <strong>Yeni Ürün / Model</strong>
-          <label>Ürün Adı</label><input id="np-name" />
-          <p class="hint">Bu ürün doğrudan Paraşüt'te oluşturulur; fiyat, stok ve diğer detayları daha sonra Paraşüt üzerinden düzenleyebilirsiniz.</p>
-          <button type="button" class="primary" id="save-new-product-btn">Ürünü Kaydet</button>
+        <div class="grid2">
+          <div>
+            <label for="order-paymentPlan">Ödeme Planı</label>
+            <select id="order-paymentPlan" required></select>
+          </div>
+          <div>
+            <label for="order-deliveryDate">Teslimat Tarihi</label>
+            <input id="order-deliveryDate" type="date" required />
+          </div>
         </div>
 
-        <label for="order-quantity">Adet</label>
-        <input id="order-quantity" type="number" min="1" required />
+        <label>Ürünler</label>
+        <div id="order-items"></div>
+        <button type="button" class="link" id="add-item-btn" style="margin-top:8px;">+ Ürün satırı ekle</button>
+        <div class="total-line">Toplam: <span id="order-total">0,00 ₺</span></div>
 
-        <label for="order-deliveryDate">Teslimat Tarihi</label>
-        <input id="order-deliveryDate" type="date" required />
-
-        <label for="order-paymentMethod">Ödeme Şekli</label>
-        <select id="order-paymentMethod" required>
-          <option value="Havale/EFT">Havale/EFT</option>
-          <option value="Kredi Kartı">Kredi Kartı</option>
-          <option value="Çek">Çek</option>
-          <option value="Nakit">Nakit</option>
-        </select>
-
-        <label for="order-paymentTiming">Ödeme Zamanı</label>
-        <select id="order-paymentTiming" required>
-          <option value="Peşin">Peşin</option>
-          <option value="7 Gün Vade">7 Gün Vade</option>
-          <option value="15 Gün Vade">15 Gün Vade</option>
-          <option value="30 Gün Vade">30 Gün Vade</option>
-          <option value="60 Gün Vade">60 Gün Vade</option>
-        </select>
+        <label for="order-note">Not (opsiyonel)</label>
+        <textarea id="order-note" rows="2"></textarea>
 
         <button class="primary" type="submit">Siparişi Gönder</button>
         <div class="error" id="order-error"></div>
@@ -102,47 +80,87 @@
     </div>
   </div>
 
-  <!-- SİPARİŞLERİM -->
   <div id="view-my-orders" class="hidden">
     <div class="card">
       <h2>Siparişlerim</h2>
       <table id="my-orders-table">
-        <thead><tr><th>Müşteri</th><th>Model</th><th>Adet</th><th>Teslimat</th><th>Durum</th><th>Tarih</th></tr></thead>
+        <thead><tr><th>Müşteri</th><th>Ürün</th><th class="num">Toplam</th><th>Teslimat</th><th>Durum</th><th>Tarih</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <!-- MÜŞTERİLERİM -->
   <div id="view-my-customers" class="hidden">
+    <div class="card">
+      <h2 id="mc-title">Yeni Müşteri Ekle</h2>
+      <div id="mc-fields"></div>
+      <button type="button" class="primary" id="mc-save-btn">Kaydet</button>
+      <button type="button" class="link" id="mc-cancel-btn" style="margin-left:12px;">Vazgeç</button>
+      <div class="error" id="mc-error"></div>
+    </div>
     <div class="card">
       <h2>Müşterilerim</h2>
       <table id="my-customers-table">
-        <thead><tr><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th></tr></thead>
+        <thead><tr><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <!-- ADMIN -->
   <div id="view-admin" class="hidden">
     <div class="card">
       <h2>Sipariş Onayları</h2>
       <p id="admin-pending-count" class="hint"></p>
       <table id="admin-orders-table">
-        <thead><tr><th>Kullanıcı</th><th>Müşteri</th><th>Model</th><th>Adet</th><th>Teslimat</th><th>İşlem</th><th>Tarih</th></tr></thead>
+        <thead><tr><th>Satıcı</th><th>Müşteri</th><th>Ürün</th><th class="num">Toplam</th><th>Teslimat</th><th>İşlem</th><th>Tarih</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <!-- ADMIN: TÜM MÜŞTERİLER -->
   <div id="view-admin-customers" class="hidden">
     <div class="card">
       <h2>Tüm Müşteriler</h2>
-      <p class="hint">Tüm kullanıcıların uygulama içinde ekledigi müşteriler (Paraşüt'teki mevcut müşteriler dahil değildir, onlar zaten Paraşüt'te görüntülenebilir).</p>
+      <p class="hint">Tüm satıcıların müşterileri; hangi müşterinin hangi satıcıya ait olduğu görünür.</p>
       <table id="admin-customers-table">
-        <thead><tr><th>Ekleyen Kullanıcı</th><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th></tr></thead>
+        <thead><tr><th>Satıcı</th><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-admin-products" class="hidden">
+    <div class="card">
+      <h2 id="ap-title">Yeni Ürün</h2>
+      <div class="grid2">
+        <div><label>Ürün Kodu</label><input id="ap-code" /></div>
+        <div><label>Ürün Adı</label><input id="ap-name" /></div>
+      </div>
+      <button type="button" class="primary" id="ap-save-btn">Kaydet</button>
+      <button type="button" class="link" id="ap-cancel-btn" style="margin-left:12px;">Vazgeç</button>
+      <div class="error" id="ap-error"></div>
+    </div>
+    <div class="card">
+      <h2>Ürünler</h2>
+      <table id="admin-products-table">
+        <thead><tr><th>Kod</th><th>Ad</th><th>Durum</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-admin-plans" class="hidden">
+    <div class="card">
+      <h2>Yeni Ödeme Planı</h2>
+      <label>Plan Adı (ör. Peşin, 30 Gün Vade, 3 Taksit)</label>
+      <input id="pp-name" />
+      <button type="button" class="primary" id="pp-save-btn">Ekle</button>
+      <div class="error" id="pp-error"></div>
+    </div>
+    <div class="card">
+      <h2>Ödeme Planları</h2>
+      <table id="admin-plans-table">
+        <thead><tr><th>Plan</th><th>Durum</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -150,6 +168,9 @@
 
 </main>
 
+<div id="modal-root"></div>
+
+<script src="config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

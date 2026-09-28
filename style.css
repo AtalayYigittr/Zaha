@@ -121,3 +121,12 @@ th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--bor
   display: flex; align-items: center; justify-content: center; z-index: 10;
 }
 .modal { background: #fff; border-radius: 10px; padding: 20px; width: 420px; max-width: 92vw; }
+
+.item-row { display: grid; grid-template-columns: 3fr 1fr 1.2fr 1.2fr auto; gap: 8px; align-items: center; margin-top: 8px; }
+.item-row .it-total { font-size: 14px; text-align: right; }
+.total-line { text-align: right; font-weight: 600; margin-top: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.inactive { color: var(--muted); text-decoration: line-through; }
+.num { text-align: right; white-space: nowrap; }
+button.small { padding: 5px 10px; font-size: 12px; margin: 0 4px 0 0; }
+@media (max-width: 640px) { .item-row { grid-template-columns: 1fr 1fr; } .grid2 { grid-template-columns: 1fr; } }
