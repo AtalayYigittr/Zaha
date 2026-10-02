@@ -18,6 +18,7 @@
     <button data-view="admin-customers" class="admin-only hidden">Tüm Müşteriler</button>
     <button data-view="admin-products" class="admin-only hidden">Ürünler</button>
     <button data-view="admin-plans" class="admin-only hidden">Ödeme Planları</button>
+    <button data-view="admin-users" class="admin-only hidden">Kullanıcılar</button>
   </nav>
   <div>
     <span id="current-user" style="margin-right:12px;font-size:13px;color:#5f6368;"></span>
@@ -161,6 +162,29 @@
       <h2>Ödeme Planları</h2>
       <table id="admin-plans-table">
         <thead><tr><th>Plan</th><th>Durum</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-admin-users" class="hidden">
+    <div class="card">
+      <h2>Yeni Kullanıcı</h2>
+      <div class="grid2">
+        <div><label>Kullanıcı Adı</label><input id="au-username" autocomplete="off" /></div>
+        <div><label>E-posta</label><input id="au-email" type="email" /></div>
+        <div><label>Şifre</label><input id="au-password" type="password" autocomplete="new-password" /></div>
+        <div><label>Rol</label>
+          <select id="au-role"><option value="user">Satıcı (user)</option><option value="admin">Admin</option></select>
+        </div>
+      </div>
+      <button type="button" class="primary" id="au-save-btn">Kullanıcı Oluştur</button>
+      <div class="error" id="au-error"></div>
+    </div>
+    <div class="card">
+      <h2>Kullanıcılar</h2>
+      <table id="admin-users-table">
+        <thead><tr><th>Kullanıcı Adı</th><th>E-posta</th><th>Rol</th><th>Durum</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>

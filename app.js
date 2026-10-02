@@ -82,7 +82,7 @@ function fillCustomerFields(prefix, c) {
 }
 
 // ---------- Görünüm yönetimi ----------
-const VIEWS = ['login', 'new-order', 'my-orders', 'my-customers', 'admin', 'admin-customers', 'admin-products', 'admin-plans'];
+const VIEWS = ['login', 'new-order', 'my-orders', 'my-customers', 'admin', 'admin-customers', 'admin-products', 'admin-plans', 'admin-users'];
 const LOADERS = {
   'new-order': loadNewOrderView,
   'my-orders': loadMyOrders,
@@ -90,7 +90,8 @@ const LOADERS = {
   'admin': loadAdminOrders,
   'admin-customers': loadAdminCustomers,
   'admin-products': loadAdminProducts,
-  'admin-plans': loadAdminPlans
+  'admin-plans': loadAdminPlans,
+  'admin-users': loadAdminUsers
 };
 
 function showView(name) {
@@ -420,6 +421,58 @@ $('pp-save-btn').addEventListener('click', async () => {
   $('pp-error').textContent = '';
   try { await apiCall('adminSavePaymentPlan', { name: val('pp-name') }); $('pp-name').value = ''; loadAdminPlans(); }
   catch (err) { $('pp-error').textContent = err.message; }
+});
+
+// ---------- Admin: kullanıcılar ----------
+async function loadAdminUsers() {
+  $('au-error').textContent = '';
+  const tbody = document.querySelector('#admin-users-table tbody');
+  tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
+  try {
+    const users = await apiCall('adminListUsers');
+    tbody.innerHTML = users.map(u => `<tr class="${u.active ? '' : 'inactive'}">
+        <td>${esc(u.username)}${u.username === state.username ? ' <span class="hint">(siz)</span>' : ''}</td>
+        <td>${esc(u.email)}</td>
+        <td>
+          <select data-role="${esc(u.username)}" ${u.username === state.username ? 'disabled' : ''}>
+            <option value="user" ${u.role === 'user' ? 'selected' : ''}>Satıcı</option>
+            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+          </select>
+        </td>
+        <td>${u.active ? 'Aktif' : 'Pasif'}</td>
+        <td>
+          <button class="link" data-reset="${esc(u.username)}">Şifre sıfırla</button>
+          <button class="link" data-toggle="${esc(u.username)}" ${u.username === state.username ? 'disabled' : ''}>${u.active ? 'Pasife al' : 'Aktif et'}</button>
+        </td></tr>`).join('') || '<tr><td colspan="5">Henüz kullanıcı yok.</td></tr>';
+
+    tbody.querySelectorAll('[data-role]').forEach(sel => sel.addEventListener('change', async () => {
+      try { await apiCall('adminUpdateUser', { username: sel.dataset.role, role: sel.value }); loadAdminUsers(); }
+      catch (err) { alert(err.message); loadAdminUsers(); }
+    }));
+    tbody.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', async () => {
+      const u = users.find(x => x.username === b.dataset.toggle);
+      try { await apiCall('adminUpdateUser', { username: u.username, active: !u.active }); loadAdminUsers(); }
+      catch (err) { alert(err.message); }
+    }));
+    tbody.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', async () => {
+      const pw = prompt('Yeni şifre (en az 6 karakter):');
+      if (!pw) return;
+      try { await apiCall('adminResetPassword', { username: b.dataset.reset, newPassword: pw }); alert('Şifre güncellendi.'); }
+      catch (err) { alert(err.message); }
+    }));
+  } catch (err) { tbody.innerHTML = `<tr><td colspan="5" class="error">${esc(err.message)}</td></tr>`; }
+}
+
+$('au-save-btn').addEventListener('click', async () => {
+  $('au-error').textContent = '';
+  try {
+    await apiCall('adminCreateUser', {
+      username: val('au-username'), email: val('au-email'),
+      password: $('au-password').value, role: $('au-role').value
+    });
+    $('au-username').value = ''; $('au-email').value = ''; $('au-password').value = '';
+    loadAdminUsers();
+  } catch (err) { $('au-error').textContent = err.message; }
 });
 
 // ---------- Başlangıç ----------
