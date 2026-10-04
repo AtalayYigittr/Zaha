@@ -15,7 +15,7 @@
     <button data-view="my-orders">Siparişlerim</button>
     <button data-view="my-customers">Müşterilerim</button>
     <button data-view="admin" class="admin-only hidden">Sipariş Onayları</button>
-    <button data-view="admin-customers" class="admin-only hidden">Tüm Müşteriler</button>
+    <button data-view="admin-customers" class="admin-only hidden">Müşteri Onayları</button>
     <button data-view="admin-products" class="admin-only hidden">Ürünler</button>
     <button data-view="admin-plans" class="admin-only hidden">Ödeme Planları</button>
     <button data-view="admin-users" class="admin-only hidden">Kullanıcılar</button>
@@ -28,6 +28,7 @@
 
 <main>
 
+  <!-- GİRİŞ -->
   <div id="view-login" class="login-wrap">
     <div class="card login-card">
       <h2>Giriş Yap</h2>
@@ -42,58 +43,72 @@
     </div>
   </div>
 
-  <!-- YENİ SİPARİŞ -->
+  <!-- YENİ SİPARİŞ / REVİZE -->
   <div id="view-new-order" class="hidden">
     <div class="card">
-      <h2>Yeni Sipariş</h2>
+      <h2 id="order-title">Yeni Sipariş</h2>
+      <div id="revise-banner" class="notice err hidden"></div>
       <form id="order-form">
         <label for="order-customer">Müşteri</label>
-        <select id="order-customer" required></select>
+        <select id="order-customer"></select>
+        <div id="customer-info" class="notice hidden"></div>
+
         <div id="new-customer-box" class="hidden card" style="margin-top:12px;">
           <strong>Yeni Müşteri</strong>
+          <p class="hint">Kaydedilen müşteri yönetici onayına gönderilir. Onaylanana kadar yalnızca Nakit ve Kredi Kartı ile sipariş verilebilir.</p>
           <div id="nc-fields"></div>
-          <button type="button" class="primary" id="save-new-customer-btn">Müşteriyi Kaydet</button>
+          <button type="button" class="primary" id="save-new-customer-btn">Müşteriyi Kaydet ve Onaya Gönder</button>
         </div>
 
         <div class="grid2">
-          <div>
-            <label for="order-paymentPlan">Ödeme Planı</label>
-            <select id="order-paymentPlan" required></select>
-          </div>
-          <div>
-            <label for="order-deliveryDate">Teslimat Tarihi</label>
-            <input id="order-deliveryDate" type="date" required />
-          </div>
+          <div><label for="order-paymentPlan">Ödeme Planı</label><select id="order-paymentPlan"></select></div>
+          <div><label for="order-deliveryDate">Teslimat Tarihi</label><input id="order-deliveryDate" type="date" /></div>
         </div>
 
-        <label>Ürünler</label>
+        <label>Ürünler <span class="hint">(fiyatlar KDV hariç, tüm ürünlerde KDV %20)</span></label>
         <div id="order-items"></div>
         <button type="button" class="link" id="add-item-btn" style="margin-top:8px;">+ Ürün satırı ekle</button>
-        <div class="total-line">Toplam: <span id="order-total">0,00 ₺</span></div>
+
+        <div class="totals-box">
+          <div>Ara toplam (KDV hariç): <strong id="order-subtotal">0,00 ₺</strong></div>
+          <div>KDV (%20): <strong id="order-vat">0,00 ₺</strong></div>
+          <div class="grand">Genel toplam (KDV dahil): <strong id="order-total">0,00 ₺</strong></div>
+        </div>
+        <div id="order-warnings" class="notice warn hidden"></div>
 
         <label for="order-note">Not (opsiyonel)</label>
         <textarea id="order-note" rows="2"></textarea>
 
-        <button class="primary" type="submit">Siparişi Gönder</button>
+        <button class="primary" type="submit" id="order-submit-btn">Siparişi Gönder</button>
+        <button type="button" class="link hidden" id="revise-cancel-btn" style="margin-left:12px;">Vazgeç</button>
         <div class="error" id="order-error"></div>
         <div class="hint" id="order-success" style="color:#1e8e3e;"></div>
       </form>
     </div>
   </div>
 
+  <!-- SİPARİŞLERİM -->
   <div id="view-my-orders" class="hidden">
     <div class="card">
       <h2>Siparişlerim</h2>
+      <div class="filters">
+        <div><label>Müşteri</label><select id="mo-customer"></select></div>
+        <button class="secondary" id="mo-pdf-btn" type="button">Listelenenleri PDF indir</button>
+      </div>
+      <p class="hint">Satırları işaretleyerek seçili siparişleri, hiçbiri seçili değilse listelenen tüm siparişleri tek PDF olarak indirebilirsiniz.</p>
       <table id="my-orders-table">
-        <thead><tr><th>Müşteri</th><th>Ürün</th><th class="num">Toplam</th><th>Teslimat</th><th>Durum</th><th>Tarih</th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="mo-select-all"></th><th>No</th><th>Müşteri</th><th>Ürün</th><th class="num">Toplam (KDV dahil)</th><th>Durum</th><th>Sevk</th><th>Tarih</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
+  <!-- MÜŞTERİLERİM -->
   <div id="view-my-customers" class="hidden">
     <div class="card">
       <h2 id="mc-title">Yeni Müşteri Ekle</h2>
+      <p class="hint">* ile işaretli alanlar zorunludur. Yeni müşteri yönetici onayına gönderilir.</p>
+      <div id="mc-note" class="notice warn hidden">Vergi kimlik no veya müşteri adı değişirse müşteri yeniden yönetici onayına düşer.</div>
       <div id="mc-fields"></div>
       <button type="button" class="primary" id="mc-save-btn">Kaydet</button>
       <button type="button" class="link" id="mc-cancel-btn" style="margin-left:12px;">Vazgeç</button>
@@ -102,40 +117,75 @@
     <div class="card">
       <h2>Müşterilerim</h2>
       <table id="my-customers-table">
-        <thead><tr><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th><th></th></tr></thead>
+        <thead><tr><th>Müşteri</th><th>Vergi No</th><th>Durum</th><th class="num">Sipariş limiti</th><th>Teslimat adresi</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
+  <!-- ADMİN: SİPARİŞ ONAYLARI -->
   <div id="view-admin" class="hidden">
     <div class="card">
       <h2>Sipariş Onayları</h2>
       <p id="admin-pending-count" class="hint"></p>
+      <div class="filters">
+        <div><label>Satıcı</label><select id="af-seller"></select></div>
+        <div><label>Durum</label>
+          <select id="af-status">
+            <option value="">Tümü</option><option value="approved">Onaylı</option>
+            <option value="unapproved">Onaysız (bekleyen + reddedilen)</option>
+            <option value="pending">Sadece bekleyen</option><option value="rejected">Sadece reddedilen</option>
+          </select></div>
+        <div><label>Sipariş tarihi (başlangıç)</label><input type="date" id="af-from"></div>
+        <div><label>Sipariş tarihi (bitiş)</label><input type="date" id="af-to"></div>
+        <div><label>Ürün (kod veya ad)</label><input id="af-product" list="af-product-list" placeholder="Ürün içeren siparişler"><datalist id="af-product-list"></datalist></div>
+        <button class="link" id="af-clear" type="button">Filtreleri temizle</button>
+        <button class="secondary" id="ao-pdf-btn" type="button" disabled>Seçilenleri PDF indir (0)</button>
+      </div>
       <table id="admin-orders-table">
-        <thead><tr><th>Satıcı</th><th>Müşteri</th><th>Ürün</th><th class="num">Toplam</th><th>Teslimat</th><th>İşlem</th><th>Tarih</th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="ao-select-all"></th><th>No</th><th>Satıcı</th><th>Müşteri</th><th>Ürün</th><th class="num">Toplam</th><th>Uyarılar</th><th>Sevk</th><th>İşlem</th><th>Tarih</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
+  <!-- ADMİN: MÜŞTERİ ONAYLARI -->
   <div id="view-admin-customers" class="hidden">
     <div class="card">
-      <h2>Tüm Müşteriler</h2>
-      <p class="hint">Tüm satıcıların müşterileri; hangi müşterinin hangi satıcıya ait olduğu görünür.</p>
+      <h2>Müşteri Onayları ve Limitler</h2>
+      <p id="admin-cust-count" class="hint"></p>
+      <div class="filters">
+        <div><label>Satıcı</label><select id="ac-seller"></select></div>
+        <div><label>Durum</label>
+          <select id="ac-status"><option value="">Tümü</option><option value="pending">Onay bekliyor</option><option value="approved">Onaylı</option><option value="rejected">Reddedildi</option></select></div>
+      </div>
       <table id="admin-customers-table">
-        <thead><tr><th>Satıcı</th><th>Müşteri</th><th>Vergi No</th><th>Adres</th><th>Telefon</th></tr></thead>
+        <thead><tr><th>Satıcı</th><th>Müşteri</th><th>Vergi No</th><th>Durum</th><th class="num">Sipariş limiti (KDV dahil)</th><th>Teslimat adresi</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
+  <!-- ADMİN: ÜRÜNLER -->
   <div id="view-admin-products" class="hidden">
+    <div class="card">
+      <h2>Excel ile Toplu Ürün Yükle</h2>
+      <p class="hint">1) Şablonu indirin ve doldurun. 2) Doldurduğunuz dosyayı seçin. 3) Önizlemeyi kontrol edip "Sisteme yükle"ye basın.<br>
+        Zorunlu sütunlar: Ürün Kodu, Ürün Adı, Açıklama, Minimum Fiyat (KDV Hariç), Koli Adeti. Kodu sistemde olan ürün güncellenir, olmayan eklenir. Hatalı satır varsa hiçbir şey yüklenmez.</p>
+      <a class="btn" href="sablon/urun-yukleme-sablonu.xlsx" download>Şablonu indir (.xlsx)</a>
+      <div style="margin-top:12px"><input type="file" id="imp-file" accept=".xlsx"></div>
+      <div id="imp-preview"></div>
+      <button type="button" class="primary hidden" id="imp-upload-btn">Sisteme yükle</button>
+      <div id="imp-result"></div>
+    </div>
     <div class="card">
       <h2 id="ap-title">Yeni Ürün</h2>
       <div class="grid2">
-        <div><label>Ürün Kodu</label><input id="ap-code" /></div>
-        <div><label>Ürün Adı</label><input id="ap-name" /></div>
+        <div><label>Ürün Kodu *</label><input id="ap-code" /></div>
+        <div><label>Ürün Adı *</label><input id="ap-name" /></div>
+        <div class="span2"><label>Açıklama *</label><input id="ap-description" /></div>
+        <div><label>Minimum Fiyat (KDV hariç, ₺) *</label><input id="ap-minPrice" type="number" min="0" step="0.01" /></div>
+        <div><label>Koli Adeti *</label><input id="ap-caseQty" type="number" min="1" step="1" /></div>
       </div>
       <button type="button" class="primary" id="ap-save-btn">Kaydet</button>
       <button type="button" class="link" id="ap-cancel-btn" style="margin-left:12px;">Vazgeç</button>
@@ -144,29 +194,37 @@
     <div class="card">
       <h2>Ürünler</h2>
       <table id="admin-products-table">
-        <thead><tr><th>Kod</th><th>Ad</th><th>Durum</th><th></th></tr></thead>
+        <thead><tr><th>Kod</th><th>Ad / Açıklama</th><th class="num">Min. fiyat (KDV hariç)</th><th class="num">Koli</th><th>Durum</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
+  <!-- ADMİN: ÖDEME PLANLARI -->
   <div id="view-admin-plans" class="hidden">
     <div class="card">
-      <h2>Yeni Ödeme Planı</h2>
-      <label>Plan Adı (ör. Peşin, 30 Gün Vade, 3 Taksit)</label>
-      <input id="pp-name" />
-      <button type="button" class="primary" id="pp-save-btn">Ekle</button>
+      <h2 id="pp-title">Yeni Ödeme Planı</h2>
+      <p class="hint">Masraf yüzdesi minimum fiyat kontrolünde kullanılır: satış fiyatı × (1 − masraf %) ≥ minimum fiyat. Nakit ödemede masraf %0'dır.</p>
+      <div class="grid2">
+        <div><label>Plan Adı</label><input id="pp-name" placeholder="ör. Nakit Peşin, Kredi Kartı Tek Çekim, 30 Gün Vade" /></div>
+        <div><label>Ödeme Türü</label>
+          <select id="pp-type"><option value="cash">Nakit</option><option value="card">Kredi Kartı</option><option value="term">Vadeli / Diğer</option></select></div>
+        <div><label>Masraf (%) <span class="hint">vade farkı veya kart komisyonu</span></label><input id="pp-cost" type="number" min="0" max="99.99" step="0.01" value="0" /></div>
+      </div>
+      <button type="button" class="primary" id="pp-save-btn">Kaydet</button>
+      <button type="button" class="link" id="pp-cancel-btn" style="margin-left:12px;">Vazgeç</button>
       <div class="error" id="pp-error"></div>
     </div>
     <div class="card">
       <h2>Ödeme Planları</h2>
       <table id="admin-plans-table">
-        <thead><tr><th>Plan</th><th>Durum</th><th></th></tr></thead>
+        <thead><tr><th>Plan</th><th>Tür</th><th class="num">Masraf</th><th>Durum</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
+  <!-- ADMİN: KULLANICILAR -->
   <div id="view-admin-users" class="hidden">
     <div class="card">
       <h2>Yeni Kullanıcı</h2>
@@ -174,9 +232,7 @@
         <div><label>Kullanıcı Adı</label><input id="au-username" autocomplete="off" /></div>
         <div><label>E-posta</label><input id="au-email" type="email" /></div>
         <div><label>Şifre</label><input id="au-password" type="password" autocomplete="new-password" /></div>
-        <div><label>Rol</label>
-          <select id="au-role"><option value="user">Satıcı (user)</option><option value="admin">Admin</option></select>
-        </div>
+        <div><label>Rol</label><select id="au-role"><option value="user">Satıcı (user)</option><option value="admin">Admin</option></select></div>
       </div>
       <button type="button" class="primary" id="au-save-btn">Kullanıcı Oluştur</button>
       <div class="error" id="au-error"></div>
@@ -194,7 +250,14 @@
 
 <div id="modal-root"></div>
 
+<script src="vendor/pdfmake.min.js"></script>
+<script src="vendor/vfs_fonts.js"></script>
+<script src="vendor/read-excel-file.min.js"></script>
 <script src="config.js"></script>
-<script src="app.js"></script>
+<script src="common.js"></script>
+<script src="pdf.js"></script>
+<script src="seller.js"></script>
+<script src="admin.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
